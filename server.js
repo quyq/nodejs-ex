@@ -87,7 +87,8 @@ app.get('/', function (req, res) {
       if (err) {
         console.log('Error running count. Message:\n'+err);
       }
-      res.render('index.html', { pageCountMessage : count, dbInfo: dbDetails });
+var ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress || req.socket.remoteAddress || req.connection.socket.remoteAddress;
+      res.render('index.html', { pageCountMessage : count+" IP:"+ip, dbInfo: dbDetails });
     });
   } else {
     res.render('index.html', { pageCountMessage : null});
