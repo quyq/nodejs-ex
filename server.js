@@ -87,8 +87,37 @@ app.get('/', function (req, res) {
       if (err) {
         console.log('Error running count. Message:\n'+err);
       }
-var ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress || req.socket.remoteAddress || req.connection.socket.remoteAddress;
-      res.render('index.html', { pageCountMessage : count+" IP:"+ip, dbInfo: dbDetails });
+      res.render('index.html', { pageCountMessage : count, dbInfo: dbDetails });
+    });
+
+    var ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress || req.socket.remoteAddress || req.connection.socket.remoteAddress;
+    const start_day=17836; //statics start on Dec 1. 2018, which is the 17835 day since Jan 1, 1970
+    var today = Math.floor(Date.now() / 3600000 / 24) - start_day;
+    var col_history = db.collection('history');
+    var col_users = db.collection('users');
+
+    col_history.findOne({ _id: today }, function (err, result) {
+      if (err) {
+        console.log(err);
+      } else if (result != null) {
+        //console.log('Found:', result);
+        col_history.update({ _id: today }, { $inc: { 'count': 1 } }, { multi: false });
+      } else {
+        //console.log('No document(s) found with defined "find" criteria. Will do an insert');
+        col_history.insert({ _id: today, count: 1 });
+      }
+    });
+
+    col_users.findOne({ _id: ip }, function (err, result) {
+      if (err) {
+        console.log(err);
+      } else if (result != null) {
+        //console.log('Found:', result);
+        col_users.update({ _id: ip }, { $inc: { 'count': 1 }, $set: { day: today } }, { multi: false });
+      } else {
+        //console.log('No document(s) found with defined "find" criteria. Will do an insert');
+        col_users.insert({ _id: ip, count: 1, day: today });
+      }
     });
   } else {
     res.render('index.html', { pageCountMessage : null});
